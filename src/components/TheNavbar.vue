@@ -1,6 +1,6 @@
 <template>
    <div id="navbar">
-     <nav class="navbar navbar-expand-lg navbar-light nav-white">
+     <nav class="navbar navbar-expand-lg navbar-light navbar-fixed-top nav-white">
       <a class="navbar-brand">wiki-tools</a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>

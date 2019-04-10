@@ -7,7 +7,7 @@
       </div>
     </div>
     
-    <div class="search-bar">
+    <div class="search-container">
       <input class="search-input" type="search" v-model="search.value" placeholder="Enter topic..."
              maxlength="50"/>
       <div class="search-btns">
@@ -18,7 +18,6 @@
       </div>
     </div>
 
-    <trends />
   </div>
 </template>
 
@@ -49,11 +48,11 @@ export default {
 <style>
 
 .title-container {
-  margin-top: 175px;
+  padding-top: 175px;
 }
 
 .text-container {
-  margin-bottom: 25px;
+  padding-bottom: 25px;
 }
 
 .title-text {
@@ -61,6 +60,12 @@ export default {
   font-family: 'Rubik', sans-serif;
   color: white;
   font-size: 60px;
+}
+
+@media all and (max-width: 500px) {
+  .title-text {
+    font-size: 40px;
+  }
 }
 
 .title-text.alternate {
@@ -88,12 +93,6 @@ export default {
   }
 }
 
-@media all and (max-width: 767px) {
-  .search-input {
-    margin-left: 30px;
-  }
-}
-
 @media all and (max-width: 715px) {
   .search-input {
     max-width: 350px;
@@ -103,6 +102,12 @@ export default {
 @media all and (max-width: 600px) {
   .search-input {
     max-width: 300px;
+  }
+}
+
+@media all and (max-width: 400px) {
+  .search-input {
+    max-width: 275px;
   }
 }
 

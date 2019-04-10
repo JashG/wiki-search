@@ -8,7 +8,7 @@
           <h2 class="title-text alternate results">search</h2>
         </div>
         <div class="col-sm-6">
-          <input class="search-input dark search-icon" type="search" v-model="Store.query" placeholder="Enter topic..."
+          <input class="search-input dark search-icon" type="search" v-model="query" placeholder="Enter topic..."
                  maxlength="50"/>
         </div>
         <div class="col-sm-3"></div>
@@ -16,7 +16,7 @@
     </div>
 
     <div class="articles">
-      <div v-if="Store.searchComplete && Store.query.length > 0" class="articles-container">
+      <div v-if="Store.searchComplete && query.length > 0" class="articles-container">
         <div v-show="!Store.pageRankComplete">
           <h3>Gathering articles...</h3>
         </div>
@@ -26,17 +26,39 @@
           </div>
           <div v-else>
             <p style="color: white;">Articles found!</p>
-            <div v-for="page in displayedPosts" :key="page.title" class="col-md-6 offset-md-3 articles-list">
+
+            <nav aria-label="Search results navigation">
+              <ul class="pagination justify-content-center">
+                <li class="page-item">
+                  <a class="page-link" aria-label="Previous" @click="setCurrentPage(currentPage - 1)">
+                    <span aria-hidden="true">&laquo;</span>
+                    <span class="sr-only">Previous</span>
+                  </a>
+                </li>
+                <li v-for="page in this.pageOptions" :key="page" class="page-item">
+                  <a class="page-link" @click="setCurrentPage(page)">{{page}}</a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" aria-label="Next" @click="setCurrentPage(currentPage + 1)">
+                    <span aria-hidden="true">&raquo;</span>
+                    <span class="sr-only">Next</span>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+            
+            <div v-for="page in pagesToDisplay" :key="page.title" class="col-md-6 offset-md-3 articles-list">
               <a :href="page.link" class="results-title"><p v-text="page.title"></p></a>
               <p class="results-text green" v-text="page.link"></p>
               <p class="results-text" v-text="page.description"></p>
               <hr style="background-color: rgb(75, 75, 75);"/>
             </div>
+
           </div>
         </div>
       </div>
       <div v-else class="articles-container">
-        <div v-if="Store.query.length > 0">
+        <div v-if="query.length > 0">
           <div class="spinner-border text-success" role="status">
             <span class="sr-only">Loading...</span>
           </div>
@@ -52,7 +74,10 @@
 </template>
 
 <script>
+import Vue from 'vue'
+import Local from 'vuejs-storage'
 import Store from '../store/index'
+Vue.use(Local)
 
 export default {
   name: 'SearchResults',
@@ -60,47 +85,77 @@ export default {
   data() {
     return {
       Store,
-      query: {
-        type: String,
-        default: ''
-      },
-      page: {
-        type: Number,
-        default: 1
-      },
-      perPage: {
-        type: Number,
-        default: 10
-      },
-      pageNums: {
-        type: Array,
-        default: []
-      }
+      query: '',
+      currentPage: 1,
+      perPage: 10,
+      totalPages: 0,
+      pageOptions: [],
     }
   },
 
+  storage: {
+    keys: ['query', 'pageOptions'],
+    namespace: 'results',
+    driver: Local.drivers.sessionStorage
+  },
+
   methods: {
-    setPages () {
-      let numPages = Math.ceil(Store.pages.length / this.perPage);
-      for (let index = 1; index <= numPages; index++) {
-        this.pageNums.push(index);
+    nextPage() {
+      if (this.currentPage < this.totalPages - 1) {
+        this.currentPage += 1
       }
+    },
+
+    prevPage() {
+      if (this.currentPage > 0) {
+        this.currentPage -= 1
+      }
+    },
+
+    initPageCounts() {
+      this.totalPages = Math.ceil(Store.pages.length / this.perPage)
+      var ops = []
+
+      for (let index = 0; index < this.totalPages; index++) {
+        ops.push(index + 1)
+      }
+
+      this.pageOptions = ops.slice(0, 3)
+    },
+
+    setCurrentPage(pageNum) {
+      if (this.currentPage == pageNum) {
+        return
+      }
+
+      var from = this.currentPage
+      // If we're at the first or last page, no need to modify the page options that are shown
+      if (pageNum <= 1 || pageNum >= this.totalPages) {
+        return
+      }
+
+      this.currentPage = pageNum
+
+      // Modify page options that are shown
+      Vue.set(this.pageOptions, 0, this.currentPage - 1)
+      Vue.set(this.pageOptions, 1, this.currentPage)
+      Vue.set(this.pageOptions, 2, this.currentPage + 1)
     },
 
     paginate(articles) {
       if (articles.length === 0) {
         return
       }
-      let page = this.page.default;
-      let perPage = this.perPage.default;
-      let from = (page * perPage) - perPage;
-      let to = (page * perPage);
-      return articles.slice(from, to);
+      let page = this.currentPage.default
+      let perPage = this.perPage.default
+      let from = (page * perPage) - perPage
+      let to = (page * perPage)
+      return articles.slice(from, to)
     }
   },
 
   computed: {
-    displayedPosts() {
+    pagesToDisplay() {
       return this.paginate(Store.pages)
     }
   },
@@ -109,6 +164,8 @@ export default {
     try {
       Store.makeOpenSearch(Store.query).then(response => {
         Store.searchComplete = true
+        this.query = Store.query
+        this.initPageCounts()
       })
     } catch {
       Store.searchComplete = true
